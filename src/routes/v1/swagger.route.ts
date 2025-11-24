@@ -15,6 +15,7 @@ const docsRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       deepLinking: true,
     },
     staticCSP: true,
+    transformStaticCSP: (header: string) => header,
   });
 };
 

@@ -1,7 +1,7 @@
 import config from '../../config/config';
 
 const swaggerDefinition = {
-  openapi: '3.0.0',
+  openapi: '3.0.0' as const,
   info: {
     title: 'node-fastify-typescript-boilerplate API documentation',
     version: '0.0.1',
@@ -17,6 +17,15 @@ const swaggerDefinition = {
       description: 'Development Server',
     },
   ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http' as const,
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+  },
 };
 
 export default swaggerDefinition;
