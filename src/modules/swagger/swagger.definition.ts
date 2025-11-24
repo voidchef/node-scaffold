@@ -3,12 +3,12 @@ import config from '../../config/config';
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'node-express-typescript-boilerplate API documentation',
+    title: 'node-fastify-typescript-boilerplate API documentation',
     version: '0.0.1',
-    description: 'This is a node express mongoose boilerplate in typescript',
+    description: 'Production-ready Node.js Fastify boilerplate written in TypeScript.',
     license: {
       name: 'MIT',
-      url: 'https://github.com/saisilinus/node-express-mongoose-typescript-boilerplate.git',
+      url: 'https://opensource.org/licenses/MIT',
     },
   },
   servers: [

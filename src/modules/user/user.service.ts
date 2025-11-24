@@ -1,9 +1,9 @@
 import httpStatus from 'http-status';
 import mongoose from 'mongoose';
-import User from './user.model';
 import ApiError from '../errors/ApiError';
 import { IOptions, QueryResult } from '../paginate/paginate';
 import { NewCreatedUser, UpdateUserBody, IUserDoc, NewRegisteredUser } from './user.interfaces';
+import User from './user.model';
 
 /**
  * Create a user
@@ -62,7 +62,7 @@ export const getUserByEmail = async (email: string): Promise<IUserDoc | null> =>
  */
 export const updateUserById = async (
   userId: mongoose.Types.ObjectId,
-  updateBody: UpdateUserBody,
+  updateBody: UpdateUserBody
 ): Promise<IUserDoc | null> => {
   const user = await getUserById(userId);
   if (!user) {

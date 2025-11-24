@@ -1,14 +1,33 @@
-version: '3'
-
 services:
   mongo:
+    container_name: node-scaffold-mongo-dev
     volumes:
       - ./data:/data/db
-  
+    ports:
+      - '27018:27017'
+
+  redis:
+    container_name: node-scaffold-redis-dev
+    ports:
+      - '6379:6379'
+
   app:
     container_name: node-scaffold-dev
-    command: yarn dev -L
+    build:
+      target: development
+    command: pnpm dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/usr/src/app/src
+      - ./tsconfig.json:/usr/src/app/tsconfig.json
+      - ./ecosystem.config.json:/usr/src/app/ecosystem.config.json
+      # Named volumes for node_modules to prevent conflicts with host
+      - backend-node-modules:/usr/src/app/node_modules
+    ports:
+      - '${PORT:-3000}:${PORT:-3000}'
+      - '5173:5173' # Vite dev server
 
 volumes:
-  mongo-data:
-    driver: local
+  backend-node-modules:

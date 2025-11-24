@@ -1,62 +1,82 @@
-import express, { Express } from 'express';
-import helmet from 'helmet';
-import xss from 'xss-clean';
-import ExpressMongoSanitize from 'express-mongo-sanitize';
-import cors from 'cors';
-import passport from 'passport';
+import fastifyCors from '@fastify/cors';
+import fastifyHelmet from '@fastify/helmet';
+import fastifyJwt from '@fastify/jwt';
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import httpStatus from 'http-status';
 import config from './config/config';
-import { morgan } from './modules/logger';
-import { jwtStrategy } from './modules/auth';
+import { errorHandler } from './modules/errors';
 import { authLimiter } from './modules/utils';
-import { ApiError, errorConverter, errorHandler } from './modules/errors';
 import routes from './routes/v1';
 
-const app: Express = express();
+async function buildApp() {
+  const app: FastifyInstance = Fastify({
+    logger:
+      config.env !== 'test'
+        ? {
+            level: 'info',
+            transport: {
+              target: 'pino-pretty',
+              options: {
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname',
+              },
+            },
+          }
+        : false,
+    trustProxy: true,
+  });
 
-if (config.env !== 'test') {
-  app.use(morgan.successHandler);
-  app.use(morgan.errorHandler);
+  // Register helmet for security headers
+  if (config.env === 'production') {
+    await app.register(fastifyHelmet);
+  } else {
+    await app.register(fastifyHelmet, {
+      contentSecurityPolicy: false,
+    });
+  }
+
+  // Register CORS
+  await app.register(fastifyCors, {
+    origin: true,
+    credentials: true,
+  });
+
+  // Register JWT
+  await app.register(fastifyJwt, {
+    secret: config.jwt.secret,
+  });
+
+  // Decorate request with authenticate method
+  app.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      reply.send(err);
+    }
+  });
+
+  // Register rate limiter for auth routes
+  if (config.env === 'production') {
+    await app.register(authLimiter, {
+      prefix: '/v1/auth',
+    });
+  }
+
+  // Register routes
+  await app.register(routes, { prefix: '/v1' });
+
+  // Handle 404 errors
+  app.setNotFoundHandler((_request: FastifyRequest, reply: FastifyReply) => {
+    reply.code(httpStatus.NOT_FOUND).send({
+      code: httpStatus.NOT_FOUND,
+      message: 'Not found',
+    });
+  });
+
+  // Register error handler
+  app.setErrorHandler(errorHandler);
+
+  return app;
 }
 
-// set security HTTP headers
-app.use(helmet());
-
-// enable cors
-app.use(cors());
-app.options('*', cors());
-
-// parse json request body
-app.use(express.json());
-
-// parse urlencoded request body
-app.use(express.urlencoded({ extended: true }));
-
-// sanitize request data
-app.use(xss());
-app.use(ExpressMongoSanitize());
-
-// jwt authentication
-app.use(passport.initialize());
-passport.use('jwt', jwtStrategy);
-
-// limit repeated failed requests to auth endpoints
-if (config.env === 'production') {
-  app.use('/v1/auth', authLimiter);
-}
-
-// v1 api routes
-app.use('/v1', routes);
-
-// send back a 404 error for any unknown api request
-app.use((_req, _res, next) => {
-  next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
-});
-
-// convert error to ApiError, if needed
-app.use(errorConverter);
-
-// handle error
-app.use(errorHandler);
-
-export default app;
+export default buildApp;

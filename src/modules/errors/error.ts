@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
+import { FastifyRequest, FastifyReply, FastifyError } from 'fastify';
 import httpStatus from 'http-status';
+import mongoose from 'mongoose';
 import config from '../../config/config';
 import { logger } from '../logger';
 import ApiError from './ApiError';
 
-export const errorConverter = (err: any, _req: Request, _res: Response, next: NextFunction) => {
+export const errorConverter = (err: any): ApiError => {
   let error = err;
   if (!(error instanceof ApiError)) {
     const statusCode =
@@ -14,18 +13,22 @@ export const errorConverter = (err: any, _req: Request, _res: Response, next: Ne
     const message: string = error.message || `${httpStatus[statusCode]}`;
     error = new ApiError(statusCode, message, false, err.stack);
   }
-  next(error);
+  return error;
 };
 
-// eslint-disable-next-line no-unused-vars
-export const errorHandler = (err: ApiError, _req: Request, res: Response, _next: NextFunction) => {
+export const errorHandler = (error: FastifyError | ApiError, _request: FastifyRequest, reply: FastifyReply) => {
+  let err = error as ApiError;
+
+  // Convert error if needed
+  if (!(error instanceof ApiError)) {
+    err = errorConverter(error);
+  }
+
   let { statusCode, message } = err;
   if (config.env === 'production' && !err.isOperational) {
     statusCode = httpStatus.INTERNAL_SERVER_ERROR;
     message = 'Internal Server Error';
   }
-
-  res.locals['errorMessage'] = err.message;
 
   const response = {
     code: statusCode,
@@ -37,5 +40,5 @@ export const errorHandler = (err: ApiError, _req: Request, res: Response, _next:
     logger.error(err);
   }
 
-  res.status(statusCode).send(response);
+  reply.code(statusCode).send(response);
 };

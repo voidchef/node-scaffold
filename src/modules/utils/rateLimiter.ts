@@ -1,9 +1,11 @@
-import rateLimit from 'express-rate-limit';
+import fastifyRateLimit from '@fastify/rate-limit';
+import { FastifyInstance } from 'fastify';
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  skipSuccessfulRequests: true,
-});
+const authLimiter = async (fastify: FastifyInstance) => {
+  await fastify.register(fastifyRateLimit, {
+    max: 20,
+    timeWindow: '15 minutes',
+  });
+};
 
 export default authLimiter;

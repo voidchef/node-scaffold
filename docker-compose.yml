@@ -1,36 +1,82 @@
-version: '3'
-
 services:
   mongo:
-    container_name: mongo
-    image: mongo:latest
-    restart: always
+    container_name: node-scaffold-mongo
+    image: mongo:7-jammy
+    restart: unless-stopped
     ports:
-      - "27018:27017"
+      - '27018:27017'
+    environment:
+      MONGO_INITDB_DATABASE: node-scaffold
+    volumes:
+      - mongo-data:/data/db
     networks:
       - backend
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  redis:
+    container_name: node-scaffold-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   app:
     container_name: node-scaffold
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
       target: base
-    restart: always
+    restart: unless-stopped
     env_file: .env
-    expose:
-      - ${PORT}
     ports:
-      - ${PORT}:${PORT}
-    environment: 
-      - MONGODB_URL=mongodb://mongo:27017/node-scaffold
+      - '${PORT:-3000}:${PORT:-3000}'
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - MONGODB_URL=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-changeme}@mongo:27017/node-scaffold?authSource=admin
       - CLIENT_URL=${CLIENT_URL}
-    links: 
-      - mongo  
+      - PORT=${PORT:-3000}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_USERNAME=${REDIS_USERNAME:-}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+      - REDIS_TLS=${REDIS_TLS:-true}
     depends_on:
-      - mongo  
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - backend
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:${PORT:-3000}/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   backend:
-    driver: bridge    
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
+  redis-data:
+    driver: local

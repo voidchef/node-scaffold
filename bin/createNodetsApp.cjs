@@ -1,33 +1,40 @@
 #!/usr/bin/env node
+/* eslint-disable no-undef */
+
 const util = require('util');
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const { execSync, exec: execCb } = require('child_process');
 
-// Utility functions
-const exec = util.promisify(require('child_process').exec);
-async function runCmd(command) {
+const exec = util.promisify(execCb);
+
+// -----------------------------
+// Helpers
+// -----------------------------
+async function runCmd(command, options = {}) {
   try {
-    const { stdout, stderr } = await exec(command);
-    console.log(stdout);
-    console.log(stderr);
-  } catch {
-    (error) => {
-      console.log(error);
-    };
+    const { stdout, stderr } = await exec(command, options);
+    if (stdout) console.log(stdout.trim());
+    if (stderr) console.error(stderr.trim());
+  } catch (error) {
+    console.error(`Error while running command: ${command}`);
+    console.error(error.message || error);
+    throw error;
   }
 }
 
-async function hasYarn() {
+function hasPnpm() {
   try {
-    await execSync('yarnpkg --version', { stdio: 'ignore' });
+    execSync('pnpm --version', { stdio: 'ignore' });
     return true;
   } catch {
     return false;
   }
 }
 
+// -----------------------------
 // Validate arguments
+// -----------------------------
 if (process.argv.length < 3) {
   console.log('Please specify the target project directory.');
   console.log('For example:');
@@ -37,73 +44,117 @@ if (process.argv.length < 3) {
   process.exit(1);
 }
 
-// Define constants
+// -----------------------------
+// Constants
+// -----------------------------
 const ownPath = process.cwd();
 const folderName = process.argv[2];
 const appPath = path.join(ownPath, folderName);
 const repo = 'https://github.com/voidchef/node-scaffold.git';
 
-// Check if directory already exists
+// -----------------------------
+// Create project directory
+// -----------------------------
 try {
-  fs.mkdirSync(appPath);
+  fs.mkdirSync(appPath, { recursive: false });
 } catch (err) {
   if (err.code === 'EEXIST') {
     console.log('Directory already exists. Please choose another name for the project.');
   } else {
-    console.log(err);
+    console.error('Failed to create directory:');
+    console.error(err);
   }
   process.exit(1);
 }
 
+// -----------------------------
+// Main setup function
+// -----------------------------
 async function setup() {
   try {
-    // Clone repo
-    console.log(`Downloading files from repo ${repo}`);
-    await runCmd(`git clone --depth 1 ${repo} ${folderName}`);
-    console.log('Cloned successfully.');
-    console.log('');
+    console.log(`Downloading files from repo: ${repo}`);
+    await runCmd(`git clone --depth 1 ${repo} "${folderName}"`);
+    console.log('Cloned successfully.\n');
 
-    // Change directory
+    // Move into app directory
     process.chdir(appPath);
 
-    // Install dependencies
-    const useYarn = await hasYarn();
-    console.log('Installing dependencies...');
-    if (useYarn) {
-      await runCmd('yarn install');
+    // Determine package manager
+    const usePnpm = hasPnpm();
+    const packageManager = usePnpm ? 'pnpm' : 'npm';
+
+    console.log(`Installing dependencies using ${packageManager}...`);
+    if (usePnpm) {
+      await runCmd('pnpm install');
     } else {
       await runCmd('npm install');
     }
-    console.log('Dependencies installed successfully.');
-    console.log();
+    console.log('Dependencies installed successfully.\n');
 
-    // Copy envornment variables
-    fs.copyFileSync(path.join(appPath, '.env.example'), path.join(appPath, '.env'));
-    console.log('Environment files copied.');
+    // Copy environment variables
+    const envExamplePath = path.join(appPath, '.env.example');
+    const envPath = path.join(appPath, '.env');
 
-    // Delete .git folder
-    await runCmd('npx rimraf ./.git');
-
-    // Remove extra files
-    fs.unlinkSync(path.join(appPath, 'CHANGELOG.md'));
-    fs.unlinkSync(path.join(appPath, 'CODE_OF_CONDUCT.md'));
-    fs.unlinkSync(path.join(appPath, 'CONTRIBUTING.md'));
-    if (!useYarn) {
-      fs.unlinkSync(path.join(appPath, 'yarn.lock'));
+    if (fs.existsSync(envExamplePath)) {
+      fs.copyFileSync(envExamplePath, envPath);
+      console.log('Environment file created from .env.example');
+    } else {
+      console.log('No .env.example file found, skipping environment copy.');
     }
 
-    console.log('Installation is now complete!');
-    console.log();
+    // Remove .git folder (no external tools)
+    const gitDir = path.join(appPath, '.git');
+    if (fs.existsSync(gitDir)) {
+      fs.rmSync(gitDir, { recursive: true, force: true });
+      console.log('Removed existing .git folder.');
+    }
 
+    // Remove extra files if they exist
+    const extraFiles = [
+      'CHANGELOG.md',
+      'CODE_OF_CONDUCT.md',
+      'CONTRIBUTING.md',
+    ];
+
+    for (const file of extraFiles) {
+      const filePath = path.join(appPath, file);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Clean up lockfiles depending on package manager
+    const lockFiles = [
+      'yarn.lock',
+      'package-lock.json',
+      usePnpm ? '' : 'pnpm-lock.yaml', // if using pnpm, keep its lockfile; if using npm, remove pnpm-lock.yaml
+    ].filter(Boolean);
+
+    for (const lockFile of lockFiles) {
+      const lockPath = path.join(appPath, lockFile);
+      if (fs.existsSync(lockPath)) {
+        fs.unlinkSync(lockPath);
+      }
+    }
+
+    console.log('\nInstallation is now complete!\n');
     console.log('We suggest that you start by typing:');
     console.log(`    cd ${folderName}`);
-    console.log(useYarn ? '    yarn dev' : '    npm run dev');
-    console.log();
-    console.log('Enjoy your production-ready Node.js app, which already supports a large number of ready-made features!');
+    console.log(
+      usePnpm
+        ? '    pnpm dev'
+        : '    npm run dev'
+    );
+    console.log('\nEnjoy your production-ready Node.js app!');
     console.log('Check README.md for more info.');
   } catch (error) {
-    console.log(error);
+    console.error('\nSomething went wrong during setup:');
+    console.error(error.message || error);
+    process.exit(1);
   }
 }
 
+// -----------------------------
+// Run
+// -----------------------------
 setup();

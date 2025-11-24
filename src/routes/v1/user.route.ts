@@ -1,22 +1,51 @@
-import express, { Router } from 'express';
-import { validate } from '../../modules/validate';
+import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { auth } from '../../modules/auth';
 import { userController, userValidation } from '../../modules/user';
+import { validate } from '../../modules/validate';
 
-const router: Router = express.Router();
+const userRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  fastify.post(
+    '/',
+    {
+      preHandler: [auth('manageUsers'), validate(userValidation.createUser)],
+    },
+    userController.createUser
+  );
 
-router
-  .route('/')
-  .post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)
-  .get(auth('getUsers'), validate(userValidation.getUsers), userController.getUsers);
+  fastify.get(
+    '/',
+    {
+      preHandler: [auth('getUsers'), validate(userValidation.getUsers)],
+    },
+    userController.getUsers
+  );
 
-router
-  .route('/:userId')
-  .get(auth('getUsers'), validate(userValidation.getUser), userController.getUser)
-  .patch(auth('manageUsers'), validate(userValidation.updateUser), userController.updateUser)
-  .delete(auth('manageUsers'), validate(userValidation.deleteUser), userController.deleteUser);
+  fastify.get(
+    '/:userId',
+    {
+      preHandler: [auth('getUsers'), validate(userValidation.getUser)],
+    },
+    userController.getUser
+  );
 
-export default router;
+  fastify.patch(
+    '/:userId',
+    {
+      preHandler: [auth('manageUsers'), validate(userValidation.updateUser)],
+    },
+    userController.updateUser
+  );
+
+  fastify.delete(
+    '/:userId',
+    {
+      preHandler: [auth('manageUsers'), validate(userValidation.deleteUser)],
+    },
+    userController.deleteUser
+  );
+};
+
+export default userRoute;
 
 /**
  * @swagger

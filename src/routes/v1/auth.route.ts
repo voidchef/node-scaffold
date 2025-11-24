@@ -1,19 +1,74 @@
-import express, { Router } from 'express';
-import { validate } from '../../modules/validate';
+import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { authValidation, authController, auth } from '../../modules/auth';
+import { validate } from '../../modules/validate';
 
-const router: Router = express.Router();
+const authRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  fastify.post(
+    '/register',
+    {
+      preHandler: [validate(authValidation.register)],
+    },
+    authController.register
+  );
 
-router.post('/register', validate(authValidation.register), authController.register);
-router.post('/login', validate(authValidation.login), authController.login);
-router.post('/logout', validate(authValidation.logout), authController.logout);
-router.post('/refresh-tokens', validate(authValidation.refreshTokens), authController.refreshTokens);
-router.post('/forgot-password', validate(authValidation.forgotPassword), authController.forgotPassword);
-router.post('/reset-password', validate(authValidation.resetPassword), authController.resetPassword);
-router.post('/send-verification-email', auth(), authController.sendVerificationEmail);
-router.post('/verify-email', validate(authValidation.verifyEmail), authController.verifyEmail);
+  fastify.post(
+    '/login',
+    {
+      preHandler: [validate(authValidation.login)],
+    },
+    authController.login
+  );
 
-export default router;
+  fastify.post(
+    '/logout',
+    {
+      preHandler: [validate(authValidation.logout)],
+    },
+    authController.logout
+  );
+
+  fastify.post(
+    '/refresh-tokens',
+    {
+      preHandler: [validate(authValidation.refreshTokens)],
+    },
+    authController.refreshTokens
+  );
+
+  fastify.post(
+    '/forgot-password',
+    {
+      preHandler: [validate(authValidation.forgotPassword)],
+    },
+    authController.forgotPassword
+  );
+
+  fastify.post(
+    '/reset-password',
+    {
+      preHandler: [validate(authValidation.resetPassword)],
+    },
+    authController.resetPassword
+  );
+
+  fastify.post(
+    '/send-verification-email',
+    {
+      preHandler: [auth()],
+    },
+    authController.sendVerificationEmail
+  );
+
+  fastify.post(
+    '/verify-email',
+    {
+      preHandler: [validate(authValidation.verifyEmail)],
+    },
+    authController.verifyEmail
+  );
+};
+
+export default authRoute;
 
 /**
  * @swagger

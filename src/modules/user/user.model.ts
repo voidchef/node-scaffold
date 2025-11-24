@@ -1,9 +1,9 @@
+import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import validator from 'validator';
-import bcrypt from 'bcryptjs';
-import toJSON from '../toJSON/toJSON';
-import paginate from '../paginate/paginate';
 import { roles } from '../../config/roles';
+import paginate from '../paginate/paginate';
+import toJSON from '../toJSON/toJSON';
 import { IUserDoc, IUserModel } from './user.interfaces';
 
 const userSchema = new mongoose.Schema<IUserDoc, IUserModel>(
@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema<IUserDoc, IUserModel>(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 // add plugin that converts mongoose to json
@@ -62,10 +62,18 @@ userSchema.plugin(paginate);
  * @param {ObjectId} [excludeUserId] - The id of the user to be excluded
  * @returns {Promise<boolean>}
  */
-userSchema.static('isEmailTaken', async function (email: string, excludeUserId: mongoose.ObjectId): Promise<boolean> {
-  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
-  return !!user;
-});
+userSchema.static(
+  'isEmailTaken',
+  async function (this: mongoose.Model<IUserDoc>, email: string, excludeUserId?: mongoose.Types.ObjectId): Promise<boolean> {
+    const filter: Record<string, any> = { email };
+
+    if (excludeUserId) {
+      filter['_id'] = { $ne: excludeUserId };
+    }
+
+    return Boolean(await this.exists(filter));
+  }
+);
 
 /**
  * Check if password matches the user's password
@@ -77,12 +85,11 @@ userSchema.method('isPasswordMatch', async function (password: string): Promise<
   return bcrypt.compare(password, user.password);
 });
 
-userSchema.pre('save', async function (next) {
+userSchema.pre<IUserDoc>('save', async function () {
   const user = this;
   if (user.isModified('password')) {
     user.password = await bcrypt.hash(user.password, 8);
   }
-  next();
 });
 
 const User = mongoose.model<IUserDoc, IUserModel>('User', userSchema);

@@ -47,9 +47,9 @@ describe('paginate plugin', () => {
   describe('populate option', () => {
     test('should populate the specified data fields', async () => {
       const project = await Project.create({ name: 'Project One' });
-      const task = await Task.create({ name: 'Task One', project: project._id });
+      const task = await Task.create({ name: 'Task One', project: project._id.toString() });
 
-      const taskPages = await Task.paginate({ _id: task._id }, { populate: 'project' });
+      const taskPages = await Task.paginate({ _id: task._id.toString() }, { populate: 'project' });
 
       expect(taskPages.results[0]).toMatchObject({ project: { _id: project._id, name: project.name } });
     });

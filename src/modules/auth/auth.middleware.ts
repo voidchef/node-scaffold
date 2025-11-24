@@ -1,37 +1,65 @@
-import { Request, Response, NextFunction } from 'express';
-import passport from 'passport';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import httpStatus from 'http-status';
-import ApiError from '../errors/ApiError';
 import { roleRights } from '../../config/roles';
-import { IUserDoc } from '../user/user.interfaces';
+import ApiError from '../errors/ApiError';
+import tokenTypes from '../token/token.types';
+import User from '../user/user.model';
 
-const verifyCallback =
-  (req: Request, resolve: any, reject: any, requiredRights: string[]) =>
-  async (err: Error, user: IUserDoc, info: string) => {
-    if (err || info || !user) {
-      return reject(new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate'));
-    }
-    req.user = user;
-
-    if (requiredRights.length) {
-      const userRights = roleRights.get(user.role);
-      if (!userRights) return reject(new ApiError(httpStatus.FORBIDDEN, 'Forbidden'));
-      const hasRequiredRights = requiredRights.every((requiredRight: string) => userRights.includes(requiredRight));
-      if (!hasRequiredRights && req.params['userId'] !== user.id) {
-        return reject(new ApiError(httpStatus.FORBIDDEN, 'Forbidden'));
-      }
-    }
-
-    resolve();
-  };
+interface RequestParams {
+  userId?: string;
+}
 
 const authMiddleware =
   (...requiredRights: string[]) =>
-  async (req: Request, res: Response, next: NextFunction) =>
-    new Promise<void>((resolve, reject) => {
-      passport.authenticate('jwt', { session: false }, verifyCallback(req, resolve, reject, requiredRights))(req, res, next);
-    })
-      .then(() => next())
-      .catch((err) => next(err));
+  async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
+    try {
+      await request.jwtVerify();
+
+      const payload = request.user as any;
+
+      if (payload.type !== tokenTypes.ACCESS) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid token type');
+      }
+
+      if (!payload.sub) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid authentication payload');
+      }
+
+      const user = await User.findById(payload.sub);
+
+      if (!user) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
+      }
+
+      request.user = user;
+
+      if (!requiredRights.length) {
+        return;
+      }
+
+      const userRights = roleRights.get(user.role);
+
+      if (!userRights) {
+        throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+      }
+
+      const hasRequiredRights = requiredRights.every((requiredRight) => userRights.includes(requiredRight));
+
+      const params = request.params as RequestParams;
+
+      const isAccessingOwnResource = typeof params?.userId === 'string' && params.userId === user._id.toString();
+
+      // Allow access if user has required rights OR if accessing their own resource
+      if (!hasRequiredRights && !isAccessingOwnResource) {
+        throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
+    }
+  };
 
 export default authMiddleware;

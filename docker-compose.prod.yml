@@ -1,8 +1,64 @@
-version: '3'
-
 services:
+  mongo:
+    container_name: node-scaffold-mongo-prod
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-changeme}
+      MONGO_INITDB_DATABASE: node-scaffold
+    volumes:
+      - mongo-data-prod:/data/db
+    # Don't expose port in production (only internal access)
+    ports: []
+
+  redis:
+    container_name: node-scaffold-redis-prod
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis-data-prod:/data
+    # Don't expose port in production (only internal access)
+    ports: []
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+
   app:
     container_name: node-scaffold-prod
-    build: 
+    build:
       target: production
-    command: yarn start
+      args:
+        - NODE_ENV=production
+    command: pnpm start
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URL=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-changeme}@mongo:27017/node-scaffold?authSource=admin
+      - CLIENT_URL=${CLIENT_URL}
+      - PORT=${PORT:-3000}
+      - TRUST_PROXY=${TRUST_PROXY:-false}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_USERNAME=${REDIS_USERNAME:-}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+      - REDIS_TLS=${REDIS_TLS:-false}
+    restart: always
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Read-only root filesystem for security (except specific paths)
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /usr/prod/app/.pm2
+    volumes:
+      - ./uploads:/usr/prod/app/uploads
+
+volumes:
+  mongo-data-prod:
+    driver: local
+  redis-data-prod:
+    driver: local

@@ -84,12 +84,11 @@ describe('toJSON plugin', () => {
       },
       {
         toJSON: {
-          transform: (_doc, ret) => {
-            // eslint-disable-next-line no-param-reassign
+          transform: (_doc, ret: any) => {
             delete ret['private'];
           },
         },
-      },
+      }
     );
     schema.plugin(toJSON);
     const SampleModel = connection.model<SampleSchemaDoc, SampleSchemaModel>('Model', schema);

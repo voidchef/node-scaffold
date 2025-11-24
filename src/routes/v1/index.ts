@@ -1,44 +1,18 @@
-import express, { Router } from 'express';
+import { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import config from '../../config/config';
 import authRoute from './auth.route';
 import docsRoute from './swagger.route';
 import userRoute from './user.route';
-import config from '../../config/config';
 
-const router = express.Router();
+const routes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  // Register default routes
+  await fastify.register(authRoute, { prefix: '/auth' });
+  await fastify.register(userRoute, { prefix: '/users' });
 
-interface IRoute {
-  path: string;
-  route: Router;
-}
+  // Register development-only routes
+  if (config.env === 'development') {
+    await fastify.register(docsRoute, { prefix: '/docs' });
+  }
+};
 
-const defaultIRoute: IRoute[] = [
-  {
-    path: '/auth',
-    route: authRoute,
-  },
-  {
-    path: '/users',
-    route: userRoute,
-  },
-];
-
-const devIRoute: IRoute[] = [
-  // IRoute available only in development mode
-  {
-    path: '/docs',
-    route: docsRoute,
-  },
-];
-
-defaultIRoute.forEach((route) => {
-  router.use(route.path, route.route);
-});
-
-/* istanbul ignore next */
-if (config.env === 'development') {
-  devIRoute.forEach((route) => {
-    router.use(route.path, route.route);
-  });
-}
-
-export default router;
+export default routes;

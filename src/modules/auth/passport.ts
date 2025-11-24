@@ -1,14 +1,15 @@
 import { ExtractJwt, Strategy as JwtStrategy } from 'passport-jwt';
-import tokenTypes from '../token/token.types';
 import config from '../../config/config';
-import User from '../user/user.model';
 import { IPayload } from '../token/token.interfaces';
+import tokenTypes from '../token/token.types';
+import User from '../user/user.model';
 
 const jwtStrategy = new JwtStrategy(
   {
     secretOrKey: config.jwt.secret,
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   async (payload: IPayload, done) => {
     try {
       if (payload.type !== tokenTypes.ACCESS) {
@@ -22,7 +23,7 @@ const jwtStrategy = new JwtStrategy(
     } catch (error) {
       done(error, false);
     }
-  },
+  }
 );
 
 export default jwtStrategy;

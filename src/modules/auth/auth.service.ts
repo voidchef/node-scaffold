@@ -1,11 +1,11 @@
 import httpStatus from 'http-status';
 import mongoose from 'mongoose';
-import Token from '../token/token.model';
 import ApiError from '../errors/ApiError';
-import tokenTypes from '../token/token.types';
-import { getUserByEmail, getUserById, updateUserById } from '../user/user.service';
-import { IUserDoc, IUserWithTokens } from '../user/user.interfaces';
+import Token from '../token/token.model';
 import { generateAuthTokens, verifyToken } from '../token/token.service';
+import tokenTypes from '../token/token.types';
+import { IUserDoc, IUserWithTokens } from '../user/user.interfaces';
+import { getUserByEmail, getUserById, updateUserById } from '../user/user.service';
 
 /**
  * Login with username and password
@@ -67,8 +67,8 @@ export const resetPassword = async (resetPasswordToken: any, newPassword: string
     if (!user) {
       throw new Error();
     }
-    await updateUserById(user.id, { password: newPassword });
-    await Token.deleteMany({ user: user.id, type: tokenTypes.RESET_PASSWORD });
+    await updateUserById(user._id, { password: newPassword });
+    await Token.deleteMany({ user: user._id.toString(), type: tokenTypes.RESET_PASSWORD });
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Password reset failed');
   }
@@ -86,8 +86,8 @@ export const verifyEmail = async (verifyEmailToken: any): Promise<IUserDoc | nul
     if (!user) {
       throw new Error();
     }
-    await Token.deleteMany({ user: user.id, type: tokenTypes.VERIFY_EMAIL });
-    const updatedUser = await updateUserById(user.id, { isEmailVerified: true });
+    await Token.deleteMany({ user: user._id.toString(), type: tokenTypes.VERIFY_EMAIL });
+    const updatedUser = await updateUserById(user._id, { isEmailVerified: true });
     return updatedUser;
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');

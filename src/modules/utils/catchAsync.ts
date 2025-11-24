@@ -1,7 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import { FastifyRequest, FastifyReply } from 'fastify';
 
-const catchAsync = (fn: any) => (req: Request, res: Response, next: NextFunction) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => next(err));
-};
+const catchAsync =
+  (fn: (request: FastifyRequest, reply: FastifyReply) => Promise<any>) =>
+  (request: FastifyRequest, reply: FastifyReply): Promise<any> => {
+    return fn(request, reply);
+  };
 
 export default catchAsync;

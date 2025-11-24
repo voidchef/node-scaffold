@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import { Schema, Document } from 'mongoose';
 
 export interface QueryResult {
@@ -75,7 +74,7 @@ const paginate = <T extends Document>(schema: Schema<T>): void => {
           populateOption
             .split('.')
             .reverse()
-            .reduce((a: string, b: string) => ({ path: b, populate: a })),
+            .reduce((a: string, b: string) => ({ path: b, populate: a }))
         );
       });
     }

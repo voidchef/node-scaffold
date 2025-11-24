@@ -1,21 +1,21 @@
-import express from 'express';
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
+import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import swaggerDefinition from '../../modules/swagger/swagger.definition';
 
-const router = express.Router();
+const docsRoute: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  await fastify.register(fastifySwagger, {
+    swagger: swaggerDefinition,
+  });
 
-const specs = swaggerJsdoc({
-  swaggerDefinition,
-  apis: ['packages/components.yaml', 'dist/routes/v1/*.js'],
-});
+  await fastify.register(fastifySwaggerUi, {
+    routePrefix: '/',
+    uiConfig: {
+      docExpansion: 'list',
+      deepLinking: true,
+    },
+    staticCSP: true,
+  });
+};
 
-router.use('/', swaggerUi.serve);
-router.get(
-  '/',
-  swaggerUi.setup(specs, {
-    explorer: true,
-  }),
-);
-
-export default router;
+export default docsRoute;

@@ -1,9 +1,9 @@
-# RESTful API Node Typescript Server Boilerplate
+# RESTful API Node Typescript Server Boilerplate (Fastify)
 
 [![Node.js CI](https://github.com/voidchef/node-scaffold/actions/workflows/node.js.yml/badge.svg)](https://github.com/voidchef/node-scaffold/actions/workflows/node.js.yml)
 [![codecov](https://codecov.io/gh/voidchef/node-scaffold/branch/master/graph/badge.svg?token=UYJAL9KTMD)](https://codecov.io/gh/voidchef/node-scaffold)
 
-By running a single command, you will get a production-ready Node.js TypeScript app installed and fully configured on your machine. The app comes with many built-in features, such as authentication using JWT, request validation, unit and integration tests, continuous integration, docker support, API documentation, pagination, etc. For more details, check the features list below.
+By running a single command, you will get a production-ready Node.js TypeScript app installed and fully configured on your machine. The app comes with many built-in features, such as authentication using JWT, request validation, unit and integration tests, continuous integration, docker support, API documentation, pagination, etc. Built with **Fastify** for high performance. For more details, check the features list below.
 
 ## Not Compatible with Node.js v19
 
@@ -72,15 +72,16 @@ cp .env.example .env
 ## Features
 
 - **ES9**: latest ECMAScript features
+- **High Performance**: Built with [Fastify](https://www.fastify.io/) - one of the fastest Node.js web frameworks
 - **Static Typing**: [TypeScript](https://www.typescriptlang.org/) static typing using typescript
 - **Hot Reloading**: [Concurrently](https://github.com/open-cli-tools/concurrently) Hot realoding with concurrently
 - **NoSQL database**: [MongoDB](https://www.mongodb.com) object data modeling using [Mongoose](https://mongoosejs.com)
-- **Authentication and authorization**: using [passport](http://www.passportjs.org)
+- **Authentication and authorization**: using [@fastify/jwt](https://github.com/fastify/fastify-jwt) and [@fastify/passport](https://github.com/fastify/fastify-passport)
 - **Validation**: request data validation using [Joi](https://github.com/hapijs/joi)
-- **Logging**: using [winston](https://github.com/winstonjs/winston) and [morgan](https://github.com/expressjs/morgan)
+- **Logging**: using [winston](https://github.com/winstonjs/winston) and [Pino](https://github.com/pinojs/pino) (Fastify's built-in logger)
 - **Testing**: unit and integration tests using [Jest](https://jestjs.io)
 - **Error handling**: centralized error handling mechanism
-- **API documentation**: with [swagger-jsdoc](https://github.com/Surnet/swagger-jsdoc) and [swagger-ui-express](https://github.com/scottie1984/swagger-ui-express)
+- **API documentation**: with [@fastify/swagger](https://github.com/fastify/fastify-swagger) and [@fastify/swagger-ui](https://github.com/fastify/fastify-swagger-ui)
 - **Process management**: advanced production process management using [PM2](https://pm2.keymetrics.io)
 - **Dependency management**: with [Yarn](https://yarnpkg.com)
 - **Environment variables**: using [dotenv](https://github.com/motdotla/dotenv) and [cross-env](https://github.com/kentcdodds/cross-env#readme)
@@ -238,7 +239,7 @@ CLIENT_URL=http://localhost:5000
 │   ├── custom.d.ts                   # File for extending types from node modules
 │   ├── declaration.d.ts              # File for declaring modules without types
 │   ├── index.ts                      # App entry file
-│   ├── modules                       # Modules such as models, controllers, services 
+│   ├── modules                       # Modules such as models, controllers, services
 │   └── routes                        # Routes
 ├── TODO.md                         # TODO List
 ├── package.json
@@ -456,9 +457,9 @@ const options = {
 
 The `projectBy` option can include multiple criteria (separated by a comma) but cannot include and exclude fields at the same time. Check out the following examples:
 
-  - [x] `name:hide, role:hide` should work
-  - [x] `name:include, role:include` should work
-  - [ ] `name:include, role:hide` will not work
+- [x] `name:hide, role:hide` should work
+- [x] `name:include, role:include` should work
+- [ ] `name:include, role:hide` will not work
 
 The plugin also supports sorting by multiple criteria (separated by a comma): `sortBy: name:desc,role:asc`
 
