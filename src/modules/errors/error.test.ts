@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { jest } from '@jest/globals';
 import httpStatus from 'http-status';
 import mongoose from 'mongoose';
@@ -98,7 +99,7 @@ describe('Error middlewares', () => {
         send: jest.fn(),
       } as any;
 
-      errorHandler(error, httpMocks.createRequest(), reply);
+      errorHandler(error, httpMocks.createRequest() as any, reply);
 
       expect(reply.code).toHaveBeenCalledWith(error.statusCode);
       expect(reply.send).toHaveBeenCalledWith(expect.objectContaining({ code: error.statusCode, message: error.message }));
@@ -112,7 +113,7 @@ describe('Error middlewares', () => {
         send: jest.fn(),
       } as any;
 
-      errorHandler(error, httpMocks.createRequest(), reply);
+      errorHandler(error, httpMocks.createRequest() as any, reply);
 
       expect(reply.send).toHaveBeenCalledWith(
         expect.objectContaining({ code: error.statusCode, message: error.message, stack: error.stack })
@@ -128,7 +129,7 @@ describe('Error middlewares', () => {
         send: jest.fn(),
       } as any;
 
-      errorHandler(error, httpMocks.createRequest(), reply);
+      errorHandler(error, httpMocks.createRequest() as any, reply);
 
       expect(reply.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -147,7 +148,7 @@ describe('Error middlewares', () => {
         send: jest.fn(),
       } as any;
 
-      errorHandler(error, httpMocks.createRequest(), reply);
+      errorHandler(error, httpMocks.createRequest() as any, reply);
 
       expect(reply.send).toHaveBeenCalledWith(
         expect.objectContaining({
