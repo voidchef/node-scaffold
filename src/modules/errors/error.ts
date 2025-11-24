@@ -16,7 +16,7 @@ export const errorConverter = (err: any): ApiError => {
   return error;
 };
 
-export const errorHandler = (error: FastifyError | ApiError, _request: FastifyRequest, reply: FastifyReply) => {
+export const errorHandler = async (error: FastifyError | ApiError, _request: FastifyRequest, reply: FastifyReply) => {
   let err = error as ApiError;
 
   // Convert error if needed
@@ -40,5 +40,8 @@ export const errorHandler = (error: FastifyError | ApiError, _request: FastifyRe
     logger.error(err);
   }
 
-  reply.code(statusCode).send(response);
+  // Ensure we haven't already sent a response
+  if (!reply.sent) {
+    return reply.code(statusCode).send(response);
+  }
 };

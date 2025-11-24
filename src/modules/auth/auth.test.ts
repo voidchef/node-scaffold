@@ -148,8 +148,9 @@ describe('Auth routes', () => {
 
       const res = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: loginCredentials });
       expect(res.statusCode).toBe(httpStatus.UNAUTHORIZED);
+      const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({ code: httpStatus.UNAUTHORIZED, message: 'Incorrect email or password' });
+      expect(body).toEqual({ code: httpStatus.UNAUTHORIZED, message: 'Incorrect email or password' });
     });
 
     test('should return 401 error if password is wrong', async () => {
@@ -161,8 +162,9 @@ describe('Auth routes', () => {
 
       const res = await app.inject({ method: 'POST', url: '/v1/auth/login', payload: loginCredentials });
       expect(res.statusCode).toBe(httpStatus.UNAUTHORIZED);
+      const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({ code: httpStatus.UNAUTHORIZED, message: 'Incorrect email or password' });
+      expect(body).toEqual({ code: httpStatus.UNAUTHORIZED, message: 'Incorrect email or password' });
     });
   });
 
@@ -183,6 +185,9 @@ describe('Auth routes', () => {
     test('should return 400 error if refresh token is missing from request body', async () => {
       const res = await app.inject({ method: 'POST', url: '/v1/auth/logout' });
       expect(res.statusCode).toBe(httpStatus.BAD_REQUEST);
+      const body = JSON.parse(res.body);
+      expect(body).toHaveProperty('code');
+      expect(body).toHaveProperty('message');
     });
 
     test('should return 404 error if refresh token is not found in the database', async () => {
@@ -230,7 +235,13 @@ describe('Auth routes', () => {
       });
 
       const dbRefreshTokenDoc = await Token.findOne({ token: body.tokens.refresh.token });
-      expect(dbRefreshTokenDoc).toMatchObject({ type: tokenTypes.REFRESH, user: userOne._id, blacklisted: false });
+      expect(dbRefreshTokenDoc).toBeDefined();
+      expect(dbRefreshTokenDoc).not.toBeNull();
+      if (dbRefreshTokenDoc) {
+        expect(dbRefreshTokenDoc.type).toBe(tokenTypes.REFRESH);
+        expect(dbRefreshTokenDoc.user.toString()).toBe(userOne._id.toHexString());
+        expect(dbRefreshTokenDoc.blacklisted).toBe(false);
+      }
 
       const dbRefreshTokenCount = await Token.countDocuments();
       expect(dbRefreshTokenCount).toBe(1);

@@ -20,15 +20,19 @@ export const login = {
 };
 
 export const logout = {
-  body: Joi.object().keys({
-    refreshToken: Joi.string().required(),
-  }),
+  body: Joi.object()
+    .keys({
+      refreshToken: Joi.string().required(),
+    })
+    .required(),
 };
 
 export const refreshTokens = {
-  body: Joi.object().keys({
-    refreshToken: Joi.string().required(),
-  }),
+  body: Joi.object()
+    .keys({
+      refreshToken: Joi.string().required(),
+    })
+    .required(),
 };
 
 export const forgotPassword = {
@@ -38,12 +42,16 @@ export const forgotPassword = {
 };
 
 export const resetPassword = {
-  query: Joi.object().keys({
-    token: Joi.string().required(),
-  }),
-  body: Joi.object().keys({
-    password: Joi.string().required().custom(password),
-  }),
+  query: Joi.object()
+    .keys({
+      token: Joi.string().required(),
+    })
+    .required(),
+  body: Joi.object()
+    .keys({
+      password: Joi.string().required().custom(password),
+    })
+    .required(),
 };
 
 export const verifyEmail = {

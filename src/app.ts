@@ -1,3 +1,4 @@
+import fastifyCompress from '@fastify/compress';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyJwt from '@fastify/jwt';
@@ -24,6 +25,15 @@ async function buildApp() {
           }
         : false,
     trustProxy: true,
+  });
+
+  // Set custom error serializer to use our format
+  app.setErrorHandler(errorHandler);
+
+  // Register compression
+  await app.register(fastifyCompress, {
+    global: true,
+    encodings: ['gzip', 'deflate'],
   });
 
   // Register helmet for security headers
@@ -72,9 +82,6 @@ async function buildApp() {
       message: 'Not found',
     });
   });
-
-  // Register error handler
-  app.setErrorHandler(errorHandler);
 
   return app;
 }

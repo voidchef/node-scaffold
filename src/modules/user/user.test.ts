@@ -89,8 +89,8 @@ describe('User routes', () => {
       expect(res.statusCode).toBe(httpStatus.CREATED);
       const body = JSON.parse(res.body);
 
-      expect(res.body).not.toHaveProperty('password');
-      expect(res.body).toEqual({
+      expect(body).not.toHaveProperty('password');
+      expect(body).toEqual({
         id: expect.anything(),
         name: newUser.name,
         email: newUser.email,
@@ -232,7 +232,7 @@ describe('User routes', () => {
       expect(res.statusCode).toBe(httpStatus.OK);
       const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({
+      expect(body).toEqual({
         results: expect.any(Array),
         page: 1,
         limit: 10,
@@ -279,7 +279,7 @@ describe('User routes', () => {
       expect(res.statusCode).toBe(httpStatus.OK);
       const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({
+      expect(body).toEqual({
         results: expect.any(Array),
         page: 1,
         limit: 10,
@@ -302,7 +302,7 @@ describe('User routes', () => {
       expect(res.statusCode).toBe(httpStatus.OK);
       const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({
+      expect(body).toEqual({
         results: expect.any(Array),
         page: 1,
         limit: 10,
@@ -326,7 +326,7 @@ describe('User routes', () => {
       expect(res.statusCode).toBe(httpStatus.OK);
       const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({
+      expect(body).toEqual({
         results: expect.any(Array),
         page: 1,
         limit: 10,
@@ -351,7 +351,7 @@ describe('User routes', () => {
       expect(res.statusCode).toBe(httpStatus.OK);
       const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({
+      expect(body).toEqual({
         results: expect.any(Array),
         page: 1,
         limit: 10,
@@ -376,7 +376,7 @@ describe('User routes', () => {
       expect(res.statusCode).toBe(httpStatus.OK);
       const body = JSON.parse(res.body);
 
-      expect(res.body).toEqual({
+      expect(body).toEqual({
         results: expect.any(Array),
         page: 1,
         limit: 10,

@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'app',
       script: 'dist/index.js',
-      node_args: '--no-warnings --experimental-loader commonjs-extension-resolution-loader',
+      node_args: '--no-warnings --import=extensionless/register',
       instances: 1,
       autorestart: true,
       watch: false,
